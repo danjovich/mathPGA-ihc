@@ -20,3 +20,27 @@ document.querySelector("form").onsubmit = (e) => {
 
   console.log(radios.find((radio) => radio[1])[0]);
 };
+
+
+const options = {
+  clean: true, // retain session
+  connectTimeout: 30000, // Timeout period increased to 30 seconds
+  // Authentication information
+  clientId: "foobar_test_random" + Math.floor(Math.random() * 10000),
+};
+
+const client = mqtt.connect("wss://test.mosquitto.org:8081", options);
+
+client.on("connect", function () {
+  client.subscribe("presence", function (err) {
+    if (!err) {
+      client.publish("presence", "Hello mqtt");
+    }
+  });
+});
+
+client.on("message", function (topic, message) {
+  // message is Buffer
+  console.log('Message received:', message.toString(), topic);
+  client.end();
+});

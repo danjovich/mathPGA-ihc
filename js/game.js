@@ -11,27 +11,28 @@ document.querySelectorAll(".header-button").forEach((value) => {
   value.innerHTML.includes(mode) && value.classList.add("active");
 });
 
-const options = {
-  clean: true, // retain session
-  connectTimeout: 30000, // Timeout period increased to 30 seconds
-  // Authentication information
-  clientId: "foobar_test_random" + Math.floor(Math.random() * 10000),
-};
+const socket = io("ws://localhost:8080");
+const mqttTopics = [
+  "teste-T1BB7",
+  "perdeu-T1BB7",
+  "ganhou-T1BB7",
+  "endereco-T1BB7",
+];
 
-const client = mqtt.connect("wss://test.mosquitto.org:8081", options);
-
-client.on("connect", function () {
-  client.subscribe("presence", function (err) {
-    if (!err) {
-      client.publish("presence", "Hello mqtt");
-    }
+socket.on("connect", () => {
+  mqttTopics.forEach((topic) => {
+    console.log(`Connected to ${topic} room`);
+    socket.emit("join", topic);
   });
-});
 
-client.on("message", function (topic, message) {
-  // message is Buffer
-  console.log('Message received:', message.toString(), topic);
-  client.end();
+  socket.emit("signal", {
+    signal: "1",
+    room: "iniciar-T1BB7",
+  });
+  
+  socket.on("signal", ({ signal, topic }) => {
+    console.log(`topic ${topic.toString()} signal ${signal.toString()}`);
+  });
 });
 
 class Questions {
@@ -80,7 +81,12 @@ class Questions {
   }
 
   isAnswerCorrect(answer) {
-    return this._answers[this.questionCount].split('').reverse().findIndex((value) => value === '1') == answer;
+    return (
+      this._answers[this.questionCount]
+        .split("")
+        .reverse()
+        .findIndex((value) => value === "1") == answer
+    );
   }
 }
 
@@ -88,20 +94,20 @@ const questions = new Questions();
 
 const radios = Array(...document.querySelectorAll(".answer"));
 
-const getOperation = (bits)  => {
+const getOperation = (bits) => {
   switch (bits) {
-    case '00':
-      return '+';
-    case '01':
-      return '-';
-    case '10':
-      return 'X';
-    case '11':
-      return '/';
+    case "00":
+      return "+";
+    case "01":
+      return "-";
+    case "10":
+      return "X";
+    case "11":
+      return "/";
     default:
-      return '+';
+      return "+";
   }
-}
+};
 
 const fillQuestionAndAnswers = () => {
   const firstNumber = parseInt(questions.currentQuestion.substring(0, 4), 2);
@@ -109,19 +115,21 @@ const fillQuestionAndAnswers = () => {
   const secondNumber = parseInt(questions.currentQuestion.substring(6), 2);
   console.log("Numbers:", firstNumber, operation, secondNumber);
 
-  document.querySelector('#first-number').innerHTML = firstNumber;
-  document.querySelector('#op').innerHTML = operation;
-  document.querySelector('#second-number').innerHTML = secondNumber;
+  document.querySelector("#first-number").innerHTML = firstNumber;
+  document.querySelector("#op").innerHTML = operation;
+  document.querySelector("#second-number").innerHTML = secondNumber;
 
   // radios.forEach(())
-}
+};
 
 fillQuestionAndAnswers();
 
 document.querySelector("form").onsubmit = (e) => {
   e.preventDefault();
 
-  console.log(questions.isAnswerCorrect(radios.find((radio) => radio.checked).value));
+  console.log(
+    questions.isAnswerCorrect(radios?.find((radio) => radio.checked).value)
+  );
 
   setTimeout(() => {
     questions.questionCount++;

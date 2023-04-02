@@ -145,18 +145,3 @@ socket.on("connect", () => {
     }, 1000);
   };
 });
-
-function getOperation(bits) {
-  switch (bits) {
-    case "00":
-      return "+";
-    case "01":
-      return "-";
-    case "10":
-      return "X";
-    case "11":
-      return "/";
-    default:
-      return "+";
-  }
-}

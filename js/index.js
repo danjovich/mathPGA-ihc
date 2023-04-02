@@ -37,3 +37,11 @@ const generateCard = (title, mode, description, info) => `<div class="card" oncl
     ...values
   );
 });
+
+const socket = io("ws://localhost:8080");
+socket.on("connect", () => {
+  socket.emit("signal", {
+    signal: "1",
+    room: "reset-T1BB7",
+  });
+});

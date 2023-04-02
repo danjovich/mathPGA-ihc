@@ -160,18 +160,3 @@ function getOperation(bits) {
       return "+";
   }
 }
-
-// function fillQuestionAndAnswers() {
-//   const firstNumber = parseInt(questions.currentQuestion.substring(0, 4), 2);
-//   const operation = getOperation(questions.currentQuestion.substring(4, 6));
-//   const secondNumber = parseInt(questions.currentQuestion.substring(6), 2);
-//   console.log("Numbers:", firstNumber, operation, secondNumber);
-
-//   document.querySelector("#first-number").innerHTML = firstNumber;
-//   document.querySelector("#op").innerHTML = operation;
-//   document.querySelector("#second-number").innerHTML = secondNumber;
-
-//   // radios.forEach(())
-// };
-
-// fillQuestionAndAnswers();

@@ -7,9 +7,85 @@ if (!mode) {
   window.open("/", "_self");
 }
 
-document.querySelectorAll(".header-button").forEach((value) => {
-  value.innerHTML.includes(mode) && value.classList.add("active");
-});
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max + 1 - min)) + min;
+}
+
+const radios = new Array(...document.querySelectorAll(".answer"));
+
+class Questions {
+  _address = 0;
+  _questionNumber = 1;
+  _answer = 0;
+
+  _questions = [
+    "1 + 1",
+    "2 - 3",
+    "4 * 5",
+    "6 / 2",
+    "3 * 5",
+    "12 + 13",
+    "2 * 60",
+    "101 - 4",
+  ];
+
+  get currentQuestion() {
+    return this._questions[this._address];
+  }
+
+  set address(value) {
+    this._address = value;
+    this._answer = value % 4;
+    this.fillQuestionAndAnswers();
+  }
+
+  get address() {
+    return this._address;
+  }
+
+  get questionNumber() {
+    return this._questionNumber;
+  }
+
+  set questionNumber(value) {
+    this._questionNumber = value;
+    this.fillQuestionAndAnswers();
+  }
+
+  isAnswerCorrect(answer) {
+    return this._answer == answer;
+  }
+
+  fillQuestionAndAnswers() {
+    document.querySelector("#question-number").innerHTML = this.questionNumber;
+    document.querySelector("#question").innerHTML = this.currentQuestion;
+
+    radios.forEach((_, index) => {
+      const answer = eval(this.currentQuestion);
+
+      if (index == this._answer) {
+        document.querySelector(`#answer-${index}`).innerHTML = answer;
+      } else {
+        let value;
+
+        do {
+          value = getRndInteger(Math.min(-100, answer), Math.max(100, answer));
+        } while (value === answer);
+
+        document.querySelector(`#answer-${index}`).innerHTML = value;
+      }
+    });
+  }
+}
+
+const questions = new Questions();
+questions.fillQuestionAndAnswers();
+
+function toTwoBitsString(number) {
+  const binaryNumber = parseInt(number).toString(2);
+
+  return binaryNumber.length < 2 ? `0${binaryNumber}` : binaryNumber;
+}
 
 const socket = io("ws://localhost:8080");
 const mqttTopics = [
@@ -27,74 +103,50 @@ socket.on("connect", () => {
 
   socket.emit("signal", {
     signal: "1",
+    room: "reset-T1BB7",
+  });
+
+  socket.emit("signal", {
+    signal: "1",
     room: "iniciar-T1BB7",
   });
-  
+
+  socket.emit("signal", {
+    signal: toTwoBitsString(parseInt(mode) - 1),
+    room: "botoes-T1BB7",
+  });
+
   socket.on("signal", ({ signal, topic }) => {
     console.log(`topic ${topic.toString()} signal ${signal.toString()}`);
+
+    if (topic === "endereco-T1BB7") {
+      questions.address = parseInt(signal, 2);
+    } else if (topic === "perdeu-T1BB7") {
+      window.open("/result.html?result=perdeu", "_self");
+    } else if (topic === "ganhou-T1BB7") {
+      window.open("/result.html?result=ganhou", "_self");
+    }
   });
+
+  document.querySelector("form").onsubmit = (e) => {
+    e.preventDefault();
+
+    console.log(
+      questions.isAnswerCorrect(radios?.find((radio) => radio.checked).value)
+    );
+
+    socket.emit("signal", {
+      signal: toTwoBitsString(radios?.find((radio) => radio.checked).value),
+      room: "botoes-T1BB7",
+    });
+
+    setTimeout(() => {
+      questions.questionNumber++;
+    }, 1000);
+  };
 });
 
-class Questions {
-  questionCount = 0;
-
-  _questions = [
-    "0000000000",
-    "1001011000",
-    "0010100001",
-    "0110110010",
-    "0111010101",
-    "0001110001",
-    "1001100000",
-    "0100010100",
-    "0000000001",
-    "0001100001",
-    "0100110010",
-    "0001000001",
-    "0011100001",
-    "1000010101",
-    "0000111001",
-    "0001100010",
-  ];
-
-  _answers = [
-    "0001",
-    "0010",
-    "0100",
-    "1000",
-    "0100",
-    "0010",
-    "0001",
-    "0001",
-    "0010",
-    "0010",
-    "0100",
-    "0100",
-    "1000",
-    "1000",
-    "0001",
-    "0100",
-  ];
-
-  get currentQuestion() {
-    return this._questions[this.questionCount];
-  }
-
-  isAnswerCorrect(answer) {
-    return (
-      this._answers[this.questionCount]
-        .split("")
-        .reverse()
-        .findIndex((value) => value === "1") == answer
-    );
-  }
-}
-
-const questions = new Questions();
-
-const radios = Array(...document.querySelectorAll(".answer"));
-
-const getOperation = (bits) => {
+function getOperation(bits) {
   switch (bits) {
     case "00":
       return "+";
@@ -107,32 +159,19 @@ const getOperation = (bits) => {
     default:
       return "+";
   }
-};
+}
 
-const fillQuestionAndAnswers = () => {
-  const firstNumber = parseInt(questions.currentQuestion.substring(0, 4), 2);
-  const operation = getOperation(questions.currentQuestion.substring(4, 6));
-  const secondNumber = parseInt(questions.currentQuestion.substring(6), 2);
-  console.log("Numbers:", firstNumber, operation, secondNumber);
+// function fillQuestionAndAnswers() {
+//   const firstNumber = parseInt(questions.currentQuestion.substring(0, 4), 2);
+//   const operation = getOperation(questions.currentQuestion.substring(4, 6));
+//   const secondNumber = parseInt(questions.currentQuestion.substring(6), 2);
+//   console.log("Numbers:", firstNumber, operation, secondNumber);
 
-  document.querySelector("#first-number").innerHTML = firstNumber;
-  document.querySelector("#op").innerHTML = operation;
-  document.querySelector("#second-number").innerHTML = secondNumber;
+//   document.querySelector("#first-number").innerHTML = firstNumber;
+//   document.querySelector("#op").innerHTML = operation;
+//   document.querySelector("#second-number").innerHTML = secondNumber;
 
-  // radios.forEach(())
-};
+//   // radios.forEach(())
+// };
 
-fillQuestionAndAnswers();
-
-document.querySelector("form").onsubmit = (e) => {
-  e.preventDefault();
-
-  console.log(
-    questions.isAnswerCorrect(radios?.find((radio) => radio.checked).value)
-  );
-
-  setTimeout(() => {
-    questions.questionCount++;
-    fillQuestionAndAnswers();
-  }, 2000);
-};
+// fillQuestionAndAnswers();

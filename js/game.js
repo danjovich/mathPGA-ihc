@@ -7,6 +7,8 @@ if (!mode) {
   window.open("/", "_self");
 }
 
+const intMode = parseInt(mode);
+
 function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max + 1 - min)) + min;
 }
@@ -29,13 +31,32 @@ class Questions {
     "101 - 4",
   ];
 
+  _hardQuestions = [
+    ["1 + 3 + 5 + 7", ""],
+    ["sin^2(x) + cos^2(x)", ""],
+    ["3*ln(e^(5))", ""],
+    ["6!/5!", ""],
+    ["((4 * 5) / 2) + 10", ""],
+    ["5^2 - 4^2 - 3^2", ""],
+    ["Quantos numeros primos entre 4 e 12?", ""],
+    ["x^2 - 4 = 0. x = ?", ""],
+  ];
+
   get currentQuestion() {
-    return this._questions[this._address];
+    if (intMode <= 2) return this._questions[this._address];
+    return this._hardQuestions[this._address][0];
+  }
+
+  get currentAnswer() {
+    if (intMode <= 2) return null;
+    return this._hardQuestions[this._address][1];
   }
 
   set address(value) {
     this._address = value;
-    this._answer = value % 4;
+    // this._answer = value % 4;
+    this._answer = 0;
+    console.log("Resposta:", this._answer);
     this.fillQuestionAndAnswers();
   }
 
@@ -61,7 +82,8 @@ class Questions {
     document.querySelector("#question").innerHTML = this.currentQuestion;
 
     radios.forEach((_, index) => {
-      const answer = eval(this.currentQuestion);
+      const answer =
+        mode <= 2 ? eval(this.currentQuestion) : this.currentAnswer;
 
       if (index == this._answer) {
         document.querySelector(`#answer-${index}`).innerHTML = answer;
@@ -69,7 +91,7 @@ class Questions {
         let value;
 
         do {
-          value = getRndInteger(Math.min(-100, answer), Math.max(100, answer));
+          value = getRndInteger(Math.min(-20, answer), Math.max(20, answer));
         } while (value === answer);
 
         document.querySelector(`#answer-${index}`).innerHTML = value;
@@ -107,12 +129,22 @@ socket.on("connect", () => {
   });
 
   socket.emit("signal", {
+    signal: "0",
+    room: "reset-T1BB7",
+  });
+
+  socket.emit("signal", {
     signal: "1",
     room: "iniciar-T1BB7",
   });
 
   socket.emit("signal", {
-    signal: toTwoBitsString(parseInt(mode) - 1),
+    signal: "0",
+    room: "iniciar-T1BB7",
+  });
+
+  socket.emit("signal", {
+    signal: toTwoBitsString(intMode - 1),
     room: "botoes-T1BB7",
   });
 
@@ -120,7 +152,8 @@ socket.on("connect", () => {
     console.log(`topic ${topic.toString()} signal ${signal.toString()}`);
 
     if (topic === "endereco-T1BB7") {
-      questions.address = parseInt(signal, 2);
+      questions.address = parseInt(signal.slice(0, 3), 2);
+      console.log(`Sinal MQTT recebido: [${topic}] ${signal}`);
     } else if (topic === "perdeu-T1BB7") {
       window.open("/result.html?result=perdeu", "_self");
     } else if (topic === "ganhou-T1BB7") {

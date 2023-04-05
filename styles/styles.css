@@ -26,7 +26,8 @@ header {
 }
 
 /* Style the header links */
-header a {
+header a,
+.result a {
   float: left;
   color: var(--background);
   text-align: center;
@@ -35,6 +36,7 @@ header a {
   font-size: 18px;
   line-height: 25px;
   border-radius: 16px;
+  background-color: var(--header-background);
 }
 
 /* Style the logo link (notice that we set the same value of line-height and font-size to prevent the header to increase when the font gets bigger */
@@ -59,7 +61,7 @@ header a.active {
   float: right;
 }
 
-.header-right > a {
+.header-right>a {
   margin-left: 4px;
 }
 
@@ -173,8 +175,14 @@ input[type="submit"]:hover {
 }
 
 .result {
-  
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
 }
+
+
 
 /* Add media queries for responsiveness - when the screen is 500px wide or less, stack the links on top of each other */
 @media screen and (max-width: 500px) {

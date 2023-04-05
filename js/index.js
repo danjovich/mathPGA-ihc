@@ -1,4 +1,9 @@
-const generateCard = (title, mode, description, info) => `<div class="card" onclick="window.open('/game.html?mode=${mode}', '_self')">
+const generateCard = (
+  title,
+  mode,
+  description,
+  info
+) => `<div class="card" onclick="window.open('/game.html?mode=${mode}', '_self')">
       <h3 class="card__title">${title}</h3>
       <p class="card__content">${description}</p>
       <div class="card__info">
@@ -15,19 +20,19 @@ const generateCard = (title, mode, description, info) => `<div class="card" oncl
 
 [
   [
-    "8 perguntas simples de aritmética, com 5 segundos para responder.",
+    "8 perguntas simples de aritmética, com 5 segundos para responder cada.",
     "Dificuldade: fácil",
   ],
   [
-    "16 perguntas simples de aritmética, com 2 segundos para responder.",
+    "8 perguntas simples de aritmética, com 2 segundos para responder cada.",
     "Dificuldade: média",
   ],
   [
-    "8 perguntas mais avançadas de aritmética, com 5 segundos para responder.",
+    "8 perguntas mais avançadas de aritmética, com 5 segundos para responder cada.",
     "Dificuldade: média",
   ],
   [
-    "16 perguntas mais avançadas de aritmética, com 2 segundos para responder.",
+    "8 perguntas mais avançadas de aritmética, com 2 segundos para responder cada.",
     "Dificuldade: difícil",
   ],
 ].forEach((values, i) => {

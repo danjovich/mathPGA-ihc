@@ -9,6 +9,20 @@ if (!mode) {
 
 const intMode = parseInt(mode);
 
+let remainingSeconds = intMode == 1 || intMode == 3 ? 5 : 2;
+let intervalId;
+
+function newInterval() {
+  clearInterval(intervalId);
+
+  remainingSeconds = intMode == 1 || intMode == 3 ? 5 : 2;
+
+  intervalId = setInterval(() => {
+    document.querySelector("#timer").innerHTML = remainingSeconds;
+    remainingSeconds--;
+  }, 1000);
+}
+
 function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max + 1 - min)) + min;
 }
@@ -32,14 +46,14 @@ class Questions {
   ];
 
   _hardQuestions = [
-    ["1 + 3 + 5 + 7", ""],
-    ["sin^2(x) + cos^2(x)", ""],
-    ["3*ln(e^(5))", ""],
-    ["6!/5!", ""],
-    ["((4 * 5) / 2) + 10", ""],
-    ["5^2 - 4^2 - 3^2", ""],
-    ["Quantos numeros primos entre 4 e 12?", ""],
-    ["x^2 - 4 = 0. x = ?", ""],
+    ["1 + 3 + 5 + 7", "16"],
+    ["sin^2(x) + cos^2(x)", "1"],
+    ["3*ln(e^(5))", "15"],
+    ["6!/5!", "6"],
+    ["((4 * 5) / 2) + 10", "20"],
+    ["5^2 - 4^2 - 3^2", "0"],
+    ["Números primos entre 4 e 12 ", "3"],
+    ["x^3 - 8 = 0. x", "2"],
   ];
 
   get currentQuestion() {
@@ -48,15 +62,15 @@ class Questions {
   }
 
   get currentAnswer() {
-    if (intMode <= 2) return null;
+    if (intMode <= 2) return eval(this.currentQuestion);
     return this._hardQuestions[this._address][1];
   }
 
   set address(value) {
     this._address = value;
-    // this._answer = value % 4;
-    this._answer = 0;
-    console.log("Resposta:", this._answer);
+    this._answer = getRndInteger(0, 3);
+    // this._answer = 0;
+    // console.log("Resposta:", this._answer);
     this.fillQuestionAndAnswers();
   }
 
@@ -81,9 +95,9 @@ class Questions {
     document.querySelector("#question-number").innerHTML = this.questionNumber;
     document.querySelector("#question").innerHTML = this.currentQuestion;
 
+    const rndValues = [];
     radios.forEach((_, index) => {
-      const answer =
-        mode <= 2 ? eval(this.currentQuestion) : this.currentAnswer;
+      const answer = this.currentAnswer;
 
       if (index == this._answer) {
         document.querySelector(`#answer-${index}`).innerHTML = answer;
@@ -91,8 +105,10 @@ class Questions {
         let value;
 
         do {
-          value = getRndInteger(Math.min(-20, answer), Math.max(20, answer));
-        } while (value === answer);
+          value = getRndInteger(Math.min(-5, answer), Math.max(5, answer));
+        } while (value == answer || rndValues.includes(value));
+
+        rndValues.push(value);
 
         document.querySelector(`#answer-${index}`).innerHTML = value;
       }
@@ -107,6 +123,15 @@ function toTwoBitsString(number) {
   const binaryNumber = parseInt(number).toString(2);
 
   return binaryNumber.length < 2 ? `0${binaryNumber}` : binaryNumber;
+}
+
+function sleep(milliseconds) {
+  var start = new Date().getTime();
+  for (var i = 0; i < 1e7; i++) {
+    if (new Date().getTime() - start > milliseconds) {
+      break;
+    }
+  }
 }
 
 const socket = io("ws://localhost:8080");
@@ -128,32 +153,42 @@ socket.on("connect", () => {
     room: "reset-T1BB7",
   });
 
+  sleep(100);
+
   socket.emit("signal", {
     signal: "0",
     room: "reset-T1BB7",
   });
+
+  sleep(100);
 
   socket.emit("signal", {
     signal: "1",
     room: "iniciar-T1BB7",
   });
 
+  sleep(100);
+
   socket.emit("signal", {
     signal: "0",
     room: "iniciar-T1BB7",
   });
+
+  sleep(250);
 
   socket.emit("signal", {
     signal: toTwoBitsString(intMode - 1),
     room: "botoes-T1BB7",
   });
 
-  socket.on("signal", ({ signal, topic }) => {
-    console.log(`topic ${topic.toString()} signal ${signal.toString()}`);
+  // sleep(250);
 
+  newInterval();
+
+  socket.on("signal", ({ signal, topic }) => {
+    console.log(`Sinal MQTT recebido: [${topic}] ${signal.toString()}`);
     if (topic === "endereco-T1BB7") {
       questions.address = parseInt(signal.slice(0, 3), 2);
-      console.log(`Sinal MQTT recebido: [${topic}] ${signal}`);
     } else if (topic === "perdeu-T1BB7") {
       window.open("/result.html?result=perdeu", "_self");
     } else if (topic === "ganhou-T1BB7") {
@@ -164,14 +199,16 @@ socket.on("connect", () => {
   document.querySelector("form").onsubmit = (e) => {
     e.preventDefault();
 
-    console.log(
-      questions.isAnswerCorrect(radios?.find((radio) => radio.checked).value)
-    );
+    const answer = radios?.find((radio) => radio.checked).value;
+
+    const signal = answer == questions._answer ? "00" : toTwoBitsString(answer);
 
     socket.emit("signal", {
-      signal: toTwoBitsString(radios?.find((radio) => radio.checked).value),
+      signal,
       room: "botoes-T1BB7",
     });
+
+    newInterval();
 
     setTimeout(() => {
       questions.questionNumber++;

@@ -201,7 +201,7 @@ socket.on("connect", () => {
 
     const answer = radios?.find((radio) => radio.checked).value;
 
-    const signal = answer == questions._answer ? "00" : toTwoBitsString(answer);
+    const signal = answer == questions._answer ? "00" : "01";
 
     socket.emit("signal", {
       signal,
